@@ -1,0 +1,9 @@
+numpy
+scipy
+shapely
+rasterio
+matplotlib
+pillow
+torch
+shap
+earthengine-api

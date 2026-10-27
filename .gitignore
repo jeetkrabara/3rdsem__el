@@ -1,0 +1,51 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+*.db
+.env
+
+# Node / React
+node_modules/
+dist/
+build/
+
+# ML artifacts (large files, share via Drive link instead -- see Bible Ch 4)
+*.pt
+*.pth
+*.h5
+
+# OS
+.DS_Store
+
+# Generated satellite training tiles
+ai_agent/data/training/images/
+ai_agent/data/training/masks/
+
+# Generated analysis outputs
+ai_agent/reports/ndwi/
+ai_agent/reports/predictions/
+ai_agent/reports/satellite_audit.csv
+
+# Single-tile prediction script
+ai_agent/scripts/predict_tile.py
+ai_agent/data/worldcover/
+ai_agent/reports/predictions_6band/
+
+# Website image cache (re-created on demand from the satellite archive)
+ai_agent/reports/web/
+
+# Analysis outputs: keep them out of git EXCEPT the files the app reads
+# (QA pictures, test runs, backups and the image cache stay on your machine)
+ai_agent/reports/*
+!ai_agent/reports/lakes/
+ai_agent/reports/lakes/*
+!ai_agent/reports/lakes/lake_water_timeseries.csv
+!ai_agent/reports/lakes/excluded_dates.txt
+!ai_agent/reports/rainfall/
+!ai_agent/reports/evaluation/
+!ai_agent/reports/gee/
+# raw OpenStreetMap download (re-created by fetch_lake_outlines.py)
+ai_agent/data/lakes/overpass_raw.json
+# old script backups
+*.py.bak

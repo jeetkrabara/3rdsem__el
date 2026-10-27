@@ -1,0 +1,4 @@
+lake_id,lake,start,end,expected,what_happened,source
+lake_0002,Bellandur Lake,2018-03-15,2018-05-15,gain,"De-weeding of the lake by BDA (activists objected that weeds were removed completely)",https://www.deccanchronicle.com/nation/current-affairs/080418/bengaluru-desilting-not-a-solution-for-bellandur-say-activists.html
+lake_0002,Bellandur Lake,2020-01-15,2020-05-15,loss,"Water diverted to Varthur through temporary channels; lake ~70% drained before desilting began 24 Apr 2020",https://www.thenewsminute.com/article/water-bengaluru-s-bellandur-lake-be-dumped-varthur-start-desilting-work-101586
+lake_0026,Hebbal Lake,2026-01-25,2026-03-15,loss,"Lake drained in early-mid February 2026 for desilting and bund work; inlets diverted",https://newskarnataka.com/bengaluru/city-lakes-drained-authorities-assure-full-rejuvenation/01032026

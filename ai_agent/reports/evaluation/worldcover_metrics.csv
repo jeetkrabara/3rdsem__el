@@ -1,0 +1,5 @@
+scene,source,accuracy,mean_iou,water_recall,vegetation_recall,bare_land_recall,built_up_recall,water_precision,vegetation_precision,bare_land_precision,built_up_precision
+8april20,model,0.3912,0.2223,0.3562,0.5449,0.2928,0.2635,0.3303,0.7036,0.0543,0.4104
+8april20,rules,0.4051,0.2722,0.4844,0.3874,0.2388,0.4415,0.7718,0.7028,0.0552,0.4462
+3april21,model,0.3549,0.2472,0.5914,0.3489,0.345,0.3572,0.61,0.7847,0.0118,0.3915
+3april21,rules,0.3331,0.2155,0.3144,0.3745,0.3887,0.2904,0.9288,0.8017,0.0106,0.3972
