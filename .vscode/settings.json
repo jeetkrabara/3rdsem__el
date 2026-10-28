@@ -1,0 +1,13 @@
+{
+  "files.exclude": {
+    "**/__pycache__": true,
+    "**/.DS_Store": true,
+    ".venv": true,
+    "frontend/node_modules": true,
+    "frontend/dist": true
+  },
+  "search.exclude": {
+    "ai_agent/data": true,
+    "ai_agent/reports/web": true
+  }
+}
