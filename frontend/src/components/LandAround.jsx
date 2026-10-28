@@ -1,14 +1,66 @@
 import { useEffect, useState } from 'react'
-import { Area, AreaChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+import { Area, AreaChart, CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { api, CLASS_COLORS, CLASS_LABELS, ha } from '../api.js'
 
 const ZONE_TEXT = {
   inside: 'Inside the lake outline (lakebed)',
   '0-30 m': '0–30 m from the shore — protected buffer (KTCDA)',
-  '30-75 m': '30–75 m — wider buffer (2016 NGT order)',
+  '30-75 m': '30–75 m — wider buffer (2016 NGT standard; set aside by the Supreme Court in 2019, shown for comparison)',
   '75-200 m': '75–200 m — the neighbourhood',
 }
 const CLASSES = ['water', 'vegetation', 'bare_land', 'built_up']
+const ZONE_COLORS = { inside: '#0b5cad', '0-30 m': '#b42318', '30-75 m': '#e8833a', '75-200 m': '#8a94a6' }
+
+function Buildings({ b }) {
+  if (!b?.available) return null
+  const rows = b.years.map((y, i) => ({ year: y, ...Object.fromEntries(Object.entries(b.zones).map(([z, v]) => [z, v.by_year[i].building_ha])) }))
+  return (
+    <div className="card stack" style={{ gap: '0.5rem' }}>
+      <h3 style={{ margin: 0 }}>Buildings around the lake ({b.years[0]}–{b.years.at(-1)})</h3>
+      <p className="small" style={{ margin: 0 }}>
+        Building footprints only (no roads or paving), from Google Open Buildings Temporal at about 4 m —
+        finer than the 10 m land-cover model, so it shows whether new <em>buildings</em> are coming up near the shore.
+      </p>
+      <div className="table-wrap">
+        <table>
+          <thead><tr><th>Zone</th><th className="num">Zone area</th><th className="num">Buildings {b.years[0]}</th><th className="num">Buildings {b.years.at(-1)}</th><th className="num">Change ({b.compare[0]} → {b.compare[1]})</th><th className="num">Mean height {b.years.at(-1)}</th></tr></thead>
+          <tbody>
+            {Object.entries(b.zones).map(([z, v]) => {
+              const first = v.by_year[0]; const last = v.by_year.at(-1)
+              const strong = Math.abs(v.change_ha) >= 0.2
+              return (
+                <tr key={z}>
+                  <td className="small">{ZONE_TEXT[z]}</td>
+                  <td className="num">{ha(v.zone_ha)}</td>
+                  <td className="num">{first.building_ha.toFixed(2)} ha <span className="muted small">({first.share_pct}%)</span></td>
+                  <td className="num">{last.building_ha.toFixed(2)} ha <span className="muted small">({last.share_pct}%)</span></td>
+                  <td className="num" style={{ color: strong ? (v.change_ha > 0 ? '#b42318' : '#15803d') : undefined }}>
+                    {v.change_ha > 0 ? '+' : ''}{v.change_ha.toFixed(2)} ha
+                    <div className="muted small">range {v.change_range_ha[0].toFixed(2)} to {v.change_range_ha[1].toFixed(2)}</div>
+                  </td>
+                  <td className="num">{last.mean_height_m ? `${last.mean_height_m.toFixed(1)} m` : '—'}</td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      </div>
+      <ResponsiveContainer width="100%" height={240}>
+        <LineChart data={rows} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke="#e3e9f0" />
+          <XAxis dataKey="year" />
+          <YAxis unit=" ha" width={70} />
+          <Tooltip formatter={(v, n) => [`${v.toFixed(2)} ha`, n]} />
+          <Legend />
+          {Object.keys(b.zones).map((z) => (
+            <Line key={z} isAnimationActive={false} type="monotone" dataKey={z} name={z === 'inside' ? 'lakebed' : z} stroke={ZONE_COLORS[z]} strokeWidth={2} dot={false} />
+          ))}
+        </LineChart>
+      </ResponsiveContainer>
+      <p className="muted small" style={{ margin: 0 }}>{b.source}. {b.note}</p>
+    </div>
+  )
+}
 
 export default function LandAround({ id }) {
   const [data, setData] = useState(null)
@@ -66,6 +118,8 @@ export default function LandAround({ id }) {
           <p className="muted small" style={{ marginBottom: 0 }}>Red = built-up growing in a buffer or water lost from the lakebed.</p>
         </div>
       )}
+
+      <Buildings b={data.buildings} />
 
       <div className="card">
         <div className="row">

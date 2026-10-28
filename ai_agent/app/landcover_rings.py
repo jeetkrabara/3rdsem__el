@@ -6,7 +6,8 @@ zones that follow the shoreline (OpenStreetMap outline):
 
     inside      the lakebed: water, weeds/vegetation, dry bed (bare), built-up
     0-30 m      the protected buffer (KTCDA: 30 m around lakes)
-    30-75 m     the wider buffer (75 m in the 2016 NGT order)
+    30-75 m     the wider buffer: 75 m was the 2016 NGT standard, set aside city-wide by
+                the Supreme Court in 2019 (kept for comparison, not the legal limit)
     75-200 m    the neighbourhood
 
 The main output is built-up land inside the buffers over the years: evidence
@@ -168,8 +169,9 @@ def _measure(lake_id, pick):
             "map": f"/files/web/rings/{lake_id}/{pick['item_id']}_classes.png"}
 
 
-def lake_rings(lake_id):
-    """Per-year zone measurements for a lake (cached per image and model)."""
+def lake_rings(lake_id, cached_only=False):
+    """Per-year zone measurements for a lake (cached per image and model).
+    cached_only: never run the model, use only years already measured."""
     stamp = _model_stamp()
     cache = CACHE_DIR / lake_id / f"rings_{stamp}.json"
     done = json.loads(cache.read_text()) if cache.exists() else {}
@@ -179,6 +181,8 @@ def lake_rings(lake_id):
             continue
         key = pick["item_id"]
         if key not in done:
+            if cached_only:
+                continue
             try:
                 done[key] = _measure(lake_id, pick)
             except Exception as error:                  # noqa: BLE001 - one image never stops the rest
@@ -213,3 +217,50 @@ def _change(years):
                                                         "change_ha": round(b - a, 2)}
         out[zone] = z
     return {"from_years": [y["year"] for y in first], "to_years": [y["year"] for y in last], "zones": out}
+
+
+# Land-based condition score, for lakes whose open water is too small to judge
+# against a seasonal normal. Weights and full-score points are a project choice.
+LAND_FULL_LOSS = 0.30      # lakebed water lost to plants / dry bed: 30% of the outline -> 100
+LAND_FULL_BUILT = 0.25     # new built-up land: 25% of the 0-75 m buffer area -> 100
+LAND_WEIGHTS = {"lakebed": 0.6, "buffer": 0.4}
+
+
+def land_score(lake_id, outline_ha):
+    """0-100 score from the land-cover change (first vs last 3 years): open water
+    in the lakebed replaced by vegetation / bare bed, and built-up growth within
+    75 m of the shore. Only 10 m images are used (the 2015-16 local scenes are
+    17-20 m and mix land and water at the shore). None if under 4 such years."""
+    r = lake_rings(lake_id, cached_only=True)
+    years = [y for y in r["years"] if y["pixel_m"] == 10.0]
+    ch = _change(years)
+    if not ch:
+        return None
+    z = ch["zones"]
+
+    def delta(zone, c):
+        v = z[zone][c]
+        return v["change_ha"] if v else None
+
+    water = delta("inside", "water")
+    built = [delta(zone, "built_up") for zone in ("0-30 m", "30-75 m")]
+    if water is None or None in built:
+        return None
+    last = years[-1]
+    buffer_ha = sum(last["rings"][zone]["pixels"] for zone in ("0-30 m", "30-75 m")) * last["pixel_m"] ** 2 / 10_000
+    loss_frac = max(0.0, -water) / outline_ha
+    built_frac = max(0.0, sum(built)) / buffer_ha if buffer_ha else 0.0
+    comps = {"lakebed": min(100.0, 100 * loss_frac / LAND_FULL_LOSS),
+             "buffer": min(100.0, 100 * built_frac / LAND_FULL_BUILT)}
+    score = sum(comps[k] * LAND_WEIGHTS[k] for k in comps)
+    parts = []
+    if water < 0:
+        parts.append(f"lakebed open water {water:+.1f} ha ({100 * loss_frac:.0f}% of the outline)")
+    else:
+        parts.append(f"lakebed open water {water:+.1f} ha")
+    parts.append(f"built-up within 75 m {sum(built):+.1f} ha ({100 * built_frac:.1f}% of the buffer)")
+    return {"land_score": round(score, 1), "components": {k: round(v, 1) for k, v in comps.items()},
+            "lakebed_water_change_ha": water, "buffer_built_up_change_ha": round(sum(built), 2),
+            "buffer_area_ha": round(buffer_ha, 1), "years": [ch["from_years"], ch["to_years"]],
+            "reason": "; ".join(parts) + f" ({ch['from_years'][0]}-{ch['from_years'][-1]} vs "
+                                         f"{ch['to_years'][0]}-{ch['to_years'][-1]}, 10 m images)."}

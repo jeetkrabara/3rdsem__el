@@ -89,6 +89,14 @@ def _num(v):
 
 def _intervals(lake):
     rows = [r for r in la.lake_rows(lake["id"]) if r["status"] == "ok"]
+    # one measurement per date: a local scene and an archive image of the same
+    # day would make a 0-day interval, and the change before it would end on the
+    # local row and never be eligible (missed Nagawara's Feb 2026 draining)
+    by_date = {}
+    for r in rows:
+        if r["_date"] not in by_date or r["source"] == "archive":
+            by_date[r["_date"]] = r
+    rows = [by_date[d] for d in sorted(by_date)]
     calendar, rain = rainfall.lake_rain(lake)
     index = {d: i for i, d in enumerate(calendar)}
     last_rain = calendar[int(np.where(np.isfinite(rain))[0][-1])]
@@ -187,7 +195,8 @@ def _lake_events_cached(lake_id, stamp):
             "water_start_ha": round(iv["a"]["_water"], 2), "water_end_ha": round(iv["b"]["_water"], 2),
             "change_ha": round(iv["df"] * o, 2), "expected_change_ha": round(float(e) * o, 2),
             "unexplained_ha": round(float(r) * o, 2), "rain_mm": round(iv["rain"], 1),
-            "score": round(float(r) / sigma, 2)})
+            "score": round(float(r) / sigma, 2), "thin_cirrus": iv["cirrus"],
+            "archive_pair": iv["a"]["source"] == "archive" and iv["b"]["source"] == "archive"})
 
     cal_rain = rainfall.lake_rain(lake)
     events = []
@@ -339,7 +348,13 @@ def _add_co_events(lake, out):
 
 
 def validation():
-    """Score detections against documented events."""
+    """Score detections against documented events.
+
+    expected = loss / gain : a documented human change; correct if an event in
+                             that direction overlaps the window
+    expected = rain        : a documented change caused by rain (control);
+                             correct if NO event overlaps the window
+    """
     if not VALIDATION_CSV.exists():
         return {"cases": [], "note": "No validation_events.csv."}
     cases = []
@@ -348,19 +363,37 @@ def validation():
             lake = la._lake_by_id(row["lake_id"])
             res = lake_events(lake) if lake else None
             window = {"start": row["start"], "end": row["end"]}
-            hits = [e for e in (res or {}).get("events", [])
-                    if _overlap(e, window) and e["direction"] == row["expected"]]
+            in_window = [e for e in (res or {}).get("events", []) if _overlap(e, window)]
+            control = row["expected"] == "rain"
+            hits = in_window if control else [e for e in in_window if e["direction"] == row["expected"]]
             covered = [i for i in (res or {}).get("intervals", []) if _overlap(i, window)]
+            if not covered:
+                why = "no clear images around this date"
+            elif control:
+                why = ("rain explained the change, as expected" if not hits
+                       else "flagged although rain caused it (false alarm)")
+            elif hits:
+                why = "detected"
+            elif all(i["thin_cirrus"] or not i["archive_pair"] for i in covered):
+                why = "images around it had thin cirrus or no cloud mask, so they cannot form an event"
+            else:
+                why = "the change was smaller than this lake can reveal, or rain explained it"
             cases.append({**{k: row[k] for k in ("lake_id", "lake", "start", "end", "expected",
                                                  "what_happened", "source")},
-                          "detected": bool(hits), "observed": bool(covered),
+                          "control": control, "detected": bool(hits), "observed": bool(covered),
+                          "correct": bool(covered) and (not hits if control else bool(hits)),
+                          "why": why,
                           "detections": [{k: e[k] for k in ("start", "end", "type", "change_ha",
                                                             "unexplained_ha")} for e in hits],
                           "intervals_in_window": covered})
-    observed = [c for c in cases if c["observed"]]
-    return {"cases": cases, "documented": len(cases), "with_clear_images": len(observed),
+    human = [c for c in cases if not c["control"]]
+    controls = [c for c in cases if c["control"] and c["observed"]]
+    observed = [c for c in human if c["observed"]]
+    return {"cases": cases, "documented": len(human), "with_clear_images": len(observed),
             "detected": sum(c["detected"] for c in observed),
-            "note": "A documented event can only be detected if clear images exist before and after it."}
+            "controls": len(controls), "controls_correct": sum(c["correct"] for c in controls),
+            "note": ("A documented event can only be detected if clear images exist before and after it. "
+                     "Rain controls are documented rain-driven changes: the detector should stay silent.")}
 
 
 def city_events(limit=None):

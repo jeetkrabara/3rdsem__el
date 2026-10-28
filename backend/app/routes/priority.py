@@ -25,19 +25,23 @@ async def get_priority_ranking(
 
     if ranked:
         index = waterbody_index(db)
-        out = []
+        out, position = [], {"water": 0, "land": 0}
         for item in ranked["items"]:
             wb = find_wb(index, item["lon"], item["lat"])
             if wb is None or (ward and wb.ward != ward):
                 continue
+            basis = item.get("basis", "water")
+            position[basis] += 1
             out.append({
                 "waterbody_id": wb.id, "name": wb.name, "ward": wb.ward,
-                "priority_score": item["priority_score"], "rank": len(out) + 1,
+                "priority_score": item["priority_score"], "rank": position[basis],
+                "basis": basis, "land_reason": (item.get("land") or {}).get("reason"),
                 "severity": item["severity"], "persistence": item["persistence"],
                 "ecological_importance": item["ecological_importance"],
                 "population_impact": item["population_impact"],
                 "status": item["status"], "open_water_ha": item["open_water_ha"],
-                "date": item["date"], "note": ranked["note"],
+                "date": item["date"],
+                "note": ranked["land_note"] if basis == "land" else ranked["note"],
             })
         return out
 

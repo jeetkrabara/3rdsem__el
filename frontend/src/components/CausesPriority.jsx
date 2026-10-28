@@ -28,7 +28,27 @@ export default function CausesPriority({ id, a }) {
 
       <div className="card stack">
         <h2 style={{ margin: 0 }}>Restoration priority</h2>
-        {p ? (
+        {p?.basis === 'land' ? (
+          <>
+            <div className="row" style={{ alignItems: 'baseline' }}>
+              <span style={{ fontSize: '2.2rem', fontWeight: 700 }}>#{p.rank}</span>
+              <span className="muted">of {a.lakes_ranked} small lakes ranked by the land around them · score {p.priority_score} / 100</span>
+            </div>
+            <table>
+              <tbody>
+                {[['lakebed', 'Lakebed open water lost to plants / dry bed', 0.6], ['buffer', 'New built-up land within 75 m', 0.4]].map(([k, label, w]) => (
+                  <tr key={k}>
+                    <td className="small">{label}<div className="muted">weight {w * 100}%</div></td>
+                    <td style={{ width: '35%' }}><div className="bar"><span style={{ width: `${p.land.components[k]}%` }} /></div></td>
+                    <td className="num">{Math.round(p.land.components[k])}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <p className="small" style={{ margin: 0 }}>{p.land.reason}</p>
+            <p className="muted small" style={{ margin: 0 }}>{a.priority_note}</p>
+          </>
+        ) : p ? (
           <>
             <div className="row" style={{ alignItems: 'baseline' }}>
               <span style={{ fontSize: '2.2rem', fontWeight: 700 }}>#{p.rank}</span>

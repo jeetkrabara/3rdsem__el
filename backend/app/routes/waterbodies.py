@@ -153,6 +153,8 @@ async def analyze_waterbody(waterbody_id: str, payload: dict = None, db: Session
         "change_point": changepoint_result,
         "cause_hypotheses": cause_result,
         "priority": rank_item,
-        "lakes_ranked": len(ranked["items"]),
-        "priority_note": ranked.get("note"),
+        "lakes_ranked": sum(1 for i in ranked["items"]
+                            if i.get("basis", "water") == (rank_item or {}).get("basis", "water")),
+        "priority_note": ranked.get("land_note") if (rank_item or {}).get("basis") == "land"
+                         else ranked.get("note"),
     }

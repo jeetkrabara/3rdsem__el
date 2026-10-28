@@ -623,10 +623,12 @@ def rank():
     _all_rows()
     if "rank" in _cache:
         return _cache["rank"]
-    items = []
+    items, land = [], []
     for lake in _load_lakes():
         s = lake_status(lake)
         if s.get("deficit_fraction") is None:
+            if s.get("status") == "normal_too_small":
+                land.append((lake, s))
             continue
         anom = anomaly(lake["id"], None)
         severity = (anom.get("anomaly_score") or 0) * 100
@@ -644,13 +646,42 @@ def rank():
             "priority_score": p["priority_score"], "severity": round(severity, 1),
             "persistence": None if persistence is None else round(persistence, 1),
             "ecological_importance": round(eco, 1), "population_impact": 50.0,
+            "basis": "water",
         })
     items.sort(key=lambda i: -i["priority_score"])
     for position, item in enumerate(items, start=1):
         item["rank"] = position
-    out = {"items": items,
+    # lakes with too little open water to judge are ranked separately, on land cover
+    land_items = []
+    try:
+        from . import landcover_rings
+        for lake, s in land:
+            ls = landcover_rings.land_score(lake["id"], lake["area_ha"])
+            if ls is None:
+                continue
+            c = lake["geom"].representative_point()
+            land_items.append({
+                "lake_id": lake["id"], "name": lake["name"],
+                "lat": round(c.y, 6), "lon": round(c.x, 6),
+                "bbox": [round(v, 5) for v in lake["geom"].bounds],
+                "outline_ha": lake["area_ha"], "status": s["status"],
+                "open_water_ha": s["open_water_ha"], "date": s["date"],
+                "priority_score": ls["land_score"], "severity": None, "persistence": None,
+                "ecological_importance": None, "population_impact": None,
+                "basis": "land", "land": ls,
+            })
+    except Exception:                       # noqa: BLE001 - land ranking is optional
+        land_items = []
+    land_items.sort(key=lambda i: -i["priority_score"])
+    for position, item in enumerate(land_items, start=1):
+        item["rank"] = position
+    out = {"items": items + land_items,
            "note": "Ecological importance is a size proxy and population "
-                   "impact a placeholder (50); weights are a project choice."}
+                   "impact a placeholder (50); weights are a project choice.",
+           "land_note": "Lakes with too little open water to compare with a seasonal normal are ranked "
+                        "separately from the land-cover model (10 m images, first vs last 3 years): 60% lakebed water lost to plants or dry bed "
+                        "(30% of the outline = full score), 40% new built-up land within 75 m (25% of the "
+                        "buffer = full score). Weights are a project choice."}
     _cache["rank"] = out
     return out
 

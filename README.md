@@ -19,7 +19,8 @@ flags changes that the rain cannot explain (draining, weeds, sewage inflow), and
 | **Change events** *(novelty)* | Changes in open water that rainfall (CHIRPS) cannot explain, classified as *water removed*, *plants covered water*, *plants cleared* or *inflow without rain*, with before/after images. |
 | **Explainability (XAI)** | The measurement rule shown pixel by pixel (water index, threshold, histogram); the U-Net land-cover model explained with occlusion, Grad-CAM and SHAP. |
 | **Accuracy** | Measurement vs three independent products; land-cover model vs ESA WorldCover; detection power of the change detector. |
-| **Priority & alerts** | A restoration ranking and alerts for lakes below normal. |
+| **Land around the lake** | The U-Net land-cover model inside the lakebed and in 0–30 / 30–75 / 75–200 m shoreline rings, year by year, plus building footprints 2016–2023 from Google Open Buildings Temporal (~4 m). |
+| **Priority & alerts** | A restoration ranking and alerts for lakes below normal; lakes with too little open water to judge are ranked separately on lakebed and buffer land-cover change. |
 | **Ask AquaRevive** | A chatbot that answers only from the project's data (optional free local AI model; every number checked). |
 | **Live** | A background updater measures new satellite passes every 6 hours. |
 
@@ -40,20 +41,21 @@ consecutive clear images a per-lake **rain-response model** predicts how much th
 *should* change given the rain that fell; changes ≥ 3σ beyond it are flagged.
 
 - Robust noise scale (MAD) and **CUSUM-style episodes**, so gradual draining over several images is caught.
-- **Thin-cirrus filter** — haze fakes a water loss; it removed 20 of 48 raw detections.
+- **Thin-cirrus filter** — haze fakes a water loss; 21 such artefacts are suppressed, leaving 36 events.
 - **Detection power** per lake from synthetic drains injected into the real data: ~10 ha for most lakes, 40–80 ha for large weed-covered ones.
-- Validated against documented events (`ai_agent/validation_events.csv`), e.g. the February 2026 draining of Hebbal Lake.
+- Validated against documented events (`ai_agent/validation_events.csv`): the February 2026 drainings of Hebbal and Nagawara lakes are detected; the 2019 Hulimavu bund breach and Bellandur's 2018/2020 works are missed (thin cirrus, or below Bellandur's detectable size); a rain-driven overflow (Doddabommasandra, Oct 2024) is correctly not flagged.
 
 ## Accuracy (from the project's own evaluation runs)
 
 | What | Result |
 |---|---|
 | Open water vs JRC Global Surface Water / Sentinel-1 radar / Dynamic World (400 lake-dates) | r = 0.96 / 0.90 / 0.88 |
-| Land-cover U-Net, held-out WorldCover pixels (2021 / 2020) | 91.5% / 84.9% |
-| Land-cover U-Net, unseen October 2026 scene | 78.6% (kappa 0.67) |
+| Land-cover U-Net v2 vs ESA WorldCover, held-out places (31.5 M px) | 87.5% acc, kappa 0.70, mIoU 54.5% (v1: 86.1%, 0.61, 46.6%) |
+| Land-cover U-Net v2, never-seen dates + places (7.3 M px) | 85.8% acc, kappa 0.66, mIoU 53.2% (v1: 86.4%, 0.61, 47.1%) |
+| Bare-land recall (weakest class), never-seen dates | 41% (v1: 6%) |
 
 Limits, stated honestly: WorldCover is itself a model (~75%); the land-cover model
-over-predicts water and is weak on bare land; rainfall explains short-term changes only;
+over-predicts water and is still weak on bare land (precision 26%); rainfall explains short-term changes only;
 large weed-covered lakes reveal only large changes. See
 `ai_agent/ACCURACY_AND_LIMITATIONS.md`.
 
@@ -86,6 +88,7 @@ cd frontend && npm install && npm run dev        # open http://localhost:5173
 # Optional: keep data live, refresh rainfall, enable the AI chatbot
 python ai_agent/scripts/live_update.py
 python ai_agent/scripts/fetch_rainfall.py --source ee --project <earth-engine-project>
+python ai_agent/scripts/fetch_open_buildings.py --project <earth-engine-project>
 brew install ollama && ollama pull qwen2.5:7b
 ```
 
@@ -100,5 +103,6 @@ the team repository.
 - Lake outlines — © OpenStreetMap contributors, ODbL
 - Rainfall — CHIRPS v2.0 (Funk et al. 2015, *Scientific Data*), via Google Earth Engine
 - Cross-checks — Google Dynamic World, JRC Global Surface Water, Sentinel-1
+- Buildings — Google Open Buildings 2.5D Temporal v1 (CC BY 4.0), via Google Earth Engine
 
 Third-semester Experiential Learning (EL) project.

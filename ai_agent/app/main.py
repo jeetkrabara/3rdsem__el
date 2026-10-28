@@ -221,9 +221,9 @@ def change_events(payload: dict = None):
 @app.post("/agent/landcover_rings")
 def landcover_rings_view(payload: dict):
     """Land cover inside the lake and in shoreline buffers (0-30, 30-75, 75-200 m), year by year."""
-    from . import landcover_rings
+    from . import buildings, landcover_rings
     lake, _ = _lake_or_404(payload)
-    return landcover_rings.lake_rings(lake["id"])
+    return {**landcover_rings.lake_rings(lake["id"]), "buildings": buildings.lake_buildings(lake["id"])}
 
 
 @app.post("/agent/chat")

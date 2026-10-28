@@ -45,6 +45,7 @@ ai_agent/reports/lakes/*
 !ai_agent/reports/rainfall/
 !ai_agent/reports/evaluation/
 !ai_agent/reports/gee/
+!ai_agent/reports/buildings/
 # raw OpenStreetMap download (re-created by fetch_lake_outlines.py)
 ai_agent/data/lakes/overpass_raw.json
 # old script backups

@@ -99,7 +99,7 @@ export default function AccuracyPage() {
           <h3 style={{ margin: 0 }}>Documented events</h3>
           <div className="table-wrap">
             <table>
-              <thead><tr><th>Lake</th><th>Window</th><th>What happened (source)</th><th>Expected</th><th>Detected</th></tr></thead>
+              <thead><tr><th>Lake</th><th>Window</th><th>What happened (source)</th><th>Expected</th><th>Result</th></tr></thead>
               <tbody>
                 {ev.validation.cases.map((c) => {
                   const lake = ev.lakes.find((l) => l.lake_id === c.lake_id)
@@ -108,10 +108,12 @@ export default function AccuracyPage() {
                       <td>{c.lake}</td>
                       <td className="small">{c.start} → {c.end}</td>
                       <td className="small"><a href={c.source} target="_blank" rel="noreferrer">{c.what_happened}</a></td>
-                      <td>{c.expected}</td>
-                      <td>{c.detected ? <strong style={{ color: '#15803d' }}>Yes</strong>
-                        : <span style={{ color: '#b42318' }}>No</span>}
-                        {!c.detected && lake && <div className="muted small">min detectable here: {lake.min_detectable_ha} ha</div>}</td>
+                      <td>{c.control ? 'rain (no event)' : c.expected}</td>
+                      <td>{!c.observed ? <span className="muted">not testable</span>
+                        : c.correct ? <strong style={{ color: '#15803d' }}>{c.control ? 'Correctly silent' : 'Detected'}</strong>
+                        : <span style={{ color: '#b42318' }}>{c.control ? 'False alarm' : 'Missed'}</span>}
+                        <div className="muted small">{c.why}</div>
+                        {!c.correct && !c.control && c.observed && lake && <div className="muted small">min detectable here: {lake.min_detectable_ha} ha</div>}</td>
                     </tr>
                   )
                 })}

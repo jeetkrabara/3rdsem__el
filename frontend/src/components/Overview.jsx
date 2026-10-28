@@ -23,7 +23,7 @@ export default function Overview({ id, a, imagery, geo }) {
              color={deficit > 0.15 ? '#b42318' : undefined} />
         <Kpi label="Outline area" value={ha(a.segmentation?.lake?.outline_ha ?? null, 0)} sub="OpenStreetMap" />
         <Kpi label="Change point" value={cp.change_point_year ?? 'None'} sub="pre-monsoon level shift" />
-        <Kpi label="Priority" value={pr ? `#${pr.rank}` : '—'} sub={pr ? `score ${pr.priority_score} of ${a.lakes_ranked} lakes` : 'not ranked'} />
+        <Kpi label="Priority" value={pr ? `#${pr.rank}` : '—'} sub={pr ? `score ${pr.priority_score} of ${a.lakes_ranked} ${pr.basis === 'land' ? 'small lakes (by land)' : 'lakes'}` : 'not ranked'} />
       </div>
 
       <div className="card stack" style={{ gap: '0.5rem' }}>

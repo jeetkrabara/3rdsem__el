@@ -48,6 +48,9 @@ export default function Dashboard() {
     return lakes.filter((l) => (l.name || '').toLowerCase().includes(q)).slice(0, 8)
   }, [query, lakes])
 
+  const byWater = ranking.filter((r) => (r.basis || 'water') === 'water')
+  const byLand = ranking.filter((r) => r.basis === 'land')
+
   const legend = ['persistent_degradation', 'below_seasonal_normal', 'normal_for_season', 'above_seasonal_normal', 'normal_too_small', 'no_measurements']
 
   return (
@@ -105,7 +108,7 @@ export default function Dashboard() {
             <table>
               <thead><tr><th>#</th><th>Lake</th><th className="num">Open water</th><th className="num">Score</th></tr></thead>
               <tbody>
-                {ranking.map((r) => (
+                {byWater.map((r) => (
                   <tr key={r.waterbody_id}>
                     <td className="muted">{r.rank}</td>
                     <td>
@@ -116,10 +119,26 @@ export default function Dashboard() {
                     <td className="num"><strong>{r.priority_score}</strong></td>
                   </tr>
                 ))}
+                {byLand.length > 0 && (
+                  <tr><td colSpan={4}><strong>Small lakes, ranked by the land around them</strong>
+                    <div className="muted small">Too little open water to compare with a seasonal normal.</div></td></tr>
+                )}
+                {byLand.map((r) => (
+                  <tr key={r.waterbody_id}>
+                    <td className="muted">{r.rank}</td>
+                    <td>
+                      <Link to={`/lake/${r.waterbody_id}`}><strong>{r.name}</strong></Link>
+                      <div className="muted small">{r.land_reason}</div>
+                    </td>
+                    <td className="num small">{ha(r.open_water_ha)}<div className="muted">{r.date}</div></td>
+                    <td className="num"><strong>{r.priority_score}</strong></td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
-          {ranking[0]?.note && <p className="muted small" style={{ marginBottom: 0 }}>{ranking[0].note}</p>}
+          {byWater[0]?.note && <p className="muted small" style={{ marginBottom: 0 }}>{byWater[0].note}</p>}
+          {byLand[0]?.note && <p className="muted small" style={{ marginBottom: 0 }}>{byLand[0].note}</p>}
         </div>
       </div>
 
@@ -128,7 +147,7 @@ export default function Dashboard() {
           <h2>Latest changes the rain cannot explain</h2>
           <p className="muted small" style={{ marginTop: 0 }}>
             {events.total} events across {events.lakes.length} lakes since 2017 · detector validated against documented events
-            ({events.validation.detected} of {events.validation.documented} found; misses were below that lake's detectable size).
+            ({events.validation.detected} of {events.validation.documented} found, {events.validation.controls_correct} of {events.validation.controls} rain controls correctly not flagged; see Accuracy for why the others were missed).
           </p>
           <div className="table-wrap">
             <table>

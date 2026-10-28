@@ -159,8 +159,9 @@ def accuracy():
     v = ev.validation()
     return (f"Our water measurements closely match independent satellite data (correlation "
             f"{m['jrc']['pearson_r']:.2f} with JRC and {m['s1']['pearson_r']:.2f} with radar). "
-            f"The change detector found {v['detected']} of {v['documented']} documented drainings or de-weedings; "
-            "the misses were too small to see at those lakes.")
+            f"The change detector found {v['detected']} of {v['documented']} documented drainings, breaches or "
+            f"de-weedings and stayed silent on {v['controls_correct']} of {v['controls']} rain-driven changes; "
+            "the misses were hidden by thin cloud or too small to see at those lakes.")
 
 
 def priority():
