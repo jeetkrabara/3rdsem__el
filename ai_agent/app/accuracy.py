@@ -97,6 +97,9 @@ def model_accuracy():
             _from_matrix([[int(v) for v in row.values()] for row in cm_rows]) if cm_rows else None),
         "per_scene": [{"scene": r["scene"], "split": r["split"], **_metrics_row(r)}
                       for r in per_scene],
+        "v1_vs_v2": [{"model": r["model"], "test": r["test"], "pixels": int(r["pixels"]),
+                      **{k: _num(r[k]) for k in r if k not in ("model", "test", "pixels")}}
+                     for r in _read_csv(EVAL_DIR / "landcover_v2_comparison.csv")],
         "caveat": "WorldCover is itself a model (about 75% accurate), so these "
                   "numbers measure agreement with it, not field truth. Only 2020 "
                   "and 2021 have WorldCover labels.",

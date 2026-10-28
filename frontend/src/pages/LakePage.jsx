@@ -9,12 +9,14 @@ import Explain from '../components/Explain.jsx'
 import LakeAccuracy from '../components/LakeAccuracy.jsx'
 import CausesPriority from '../components/CausesPriority.jsx'
 import ChangeEvents from '../components/ChangeEvents.jsx'
+import LandAround from '../components/LandAround.jsx'
 
 const TABS = {
   overview: 'Overview',
   years: 'Satellite images by year',
   trends: 'Trends',
   events: 'Change events',
+  land: 'Land around the lake',
   explain: 'Explainability (XAI)',
   accuracy: 'Accuracy',
   causes: 'Causes & priority',
@@ -72,6 +74,7 @@ export default function LakePage() {
           {tab === 'years' && (imagery ? <YearlyImagery id={id} imagery={imagery} changeYear={a.change_point?.change_point_year} /> : <p className="muted">Loading…</p>)}
           {tab === 'trends' && <Trends series={series} seasonality={seasonality} />}
           {tab === 'events' && <ChangeEvents id={id} data={events} />}
+          {tab === 'land' && <LandAround id={id} />}
           {tab === 'explain' && <Explain id={id} imagery={imagery} />}
           {tab === 'accuracy' && <LakeAccuracy acc={acc} />}
           {tab === 'causes' && <CausesPriority id={id} a={a} />}

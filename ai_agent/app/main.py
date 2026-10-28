@@ -218,6 +218,14 @@ def change_events(payload: dict = None):
         raise HTTPException(424, str(error))
 
 
+@app.post("/agent/landcover_rings")
+def landcover_rings_view(payload: dict):
+    """Land cover inside the lake and in shoreline buffers (0-30, 30-75, 75-200 m), year by year."""
+    from . import landcover_rings
+    lake, _ = _lake_or_404(payload)
+    return landcover_rings.lake_rings(lake["id"])
+
+
 @app.post("/agent/chat")
 def chat_view(payload: dict):
     """Ask AquaRevive: payload = {message, context: {lake_ids, topic}, history: [{role, content}]}."""

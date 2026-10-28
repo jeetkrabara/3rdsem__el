@@ -131,6 +131,15 @@ async def city_events(limit: Optional[int] = None, db: Session = Depends(get_db)
     return data
 
 
+@router.get("/api/waterbodies/{waterbody_id}/landcover")
+async def lake_landcover(waterbody_id: str, db: Session = Depends(get_db)):
+    """Land cover in the lake and its shoreline buffers over the years (slow the first time)."""
+    wb = _get_wb(db, waterbody_id)
+    data = await agent_client.call_real("/agent/landcover_rings", {"bbox": _bbox(wb)}, timeout=600.0)
+    data["waterbody_id"] = waterbody_id
+    return data
+
+
 @router.post("/api/chat")
 async def chat(payload: dict, db: Session = Depends(get_db)):
     """Ask AquaRevive. Adds the website page to open for more detail."""

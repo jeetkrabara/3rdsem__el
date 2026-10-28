@@ -59,6 +59,37 @@ export default function AccuracyPage() {
             <div><h3>Per class, 2026-10-14</h3><PerClassTable perClass={val.per_class} /></div>
           </div>
         )}
+        {m.v1_vs_v2?.length > 0 && (
+          <div className="stack" style={{ gap: '0.4rem' }}>
+            <h3 style={{ margin: 0 }}>Model v2 (in use) vs v1 — same held-out pixels</h3>
+            <p className="small" style={{ margin: 0 }}>
+              v2 was trained on 10 extra Sentinel-2 images from all seasons of 2020–2021 (10 m) besides the two April scenes.
+              "New dates" were never seen in training, and are scored only on the never-trained right 30% of the area.
+            </p>
+            <div className="table-wrap">
+              <table>
+                <thead><tr><th>Model</th><th>Test</th><th className="num">Accuracy</th><th className="num">Kappa</th>
+                  <th className="num">Mean IoU</th><th className="num">Water P / R</th><th className="num">Bare land P / R</th></tr></thead>
+                <tbody>
+                  {m.v1_vs_v2.map((r) => (
+                    <tr key={r.model + r.test} style={{ fontWeight: r.model.startsWith('v2') ? 600 : undefined }}>
+                      <td>{r.model}</td><td className="small">{r.test}</td>
+                      <td className="num">{frac(r.accuracy)}</td><td className="num">{r.kappa?.toFixed(2)}</td>
+                      <td className="num">{frac(r.mean_iou)}</td>
+                      <td className="num">{frac(r.water_precision, 0)} / {frac(r.water_recall, 0)}</td>
+                      <td className="num">{frac(r.bare_land_precision, 0)} / {frac(r.bare_land_recall, 0)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <p className="muted small" style={{ margin: 0 }}>
+              v2 finds bare land (dry lakebeds, construction, cleared land) far more often (recall 6% → 41%) and scores higher on kappa
+              and mean IoU, which reward all four classes fairly; plain accuracy is about the same because vegetation and built-up
+              dominate. Trade-off: more false bare land (precision 46% → 26%). The figures above this table describe v1.
+            </p>
+          </div>
+        )}
         <div className="banner warn small">{m.caveat} Water is over-predicted (low precision) and bare land is the weakest class, so city-wide land-cover change should not be quoted as a precise number.</div>
       </div>
 

@@ -36,6 +36,7 @@ export const api = {
   accuracy: (id) => request(`/api/waterbodies/${id}/accuracy`),
   accuracyAll: () => request('/api/accuracy'),
   events: (id) => request(`/api/waterbodies/${id}/events`),
+  landcover: (id) => request(`/api/waterbodies/${id}/landcover`),
   chat: (message, context, history) => post('/api/chat', { message, context, history }),
   cityEvents: (limit) => request(`/api/events${limit ? `?limit=${limit}` : ''}`),
   reportUrl: (id) => `/api/reports/${id}/pdf`,

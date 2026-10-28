@@ -49,3 +49,6 @@ ai_agent/reports/lakes/*
 ai_agent/data/lakes/overpass_raw.json
 # old script backups
 *.py.bak
+
+# Multi-season training images (re-created by build_archive_training.py)
+ai_agent/data/training_archive/
